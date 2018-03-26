@@ -1,6 +1,7 @@
 module.exports = {
   app: {
     port: process.env.PORT || 3000,
+    dburi: process.env.MONGODB_URI,
     sess_secret: process.env.SESS_SECRET,
   },
   auth: {
