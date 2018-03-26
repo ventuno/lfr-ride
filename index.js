@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const {LyftRide} = require('./model');
 const lyftClient = require('./lyft-client');
+const smsApi = require('./sms-api');
 
 const PORT = config.get('app.port');
 const SESS_SECRET = config.get('app.sess_secret');
@@ -58,12 +59,16 @@ app.post('/rides', (req, res) => {
     )
     .then((ride) => {
       if (ride) {
-        LyftRide.create({
+        return LyftRide.create({
           phone: phone,
           ride_id: ride.ride_id,
           status: ride.status,
         });
       }
+      throw new Error();
+    })
+    .then((ride) => {
+      return smsApi.sendSms(phone, 'ride created');
     });
   res.send('okp');
 });
