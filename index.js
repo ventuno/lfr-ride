@@ -23,7 +23,7 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
-mongoose.connect('mongodb://localhost/test');
+mongoose.connect(config.app.dburi);
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
