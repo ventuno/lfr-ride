@@ -95,11 +95,31 @@ function requestRide(phone, rideType, origin, destination) {
   });
 }
 
+/**
+ * Estimate a new ride.
+ * @param {string} phone The phone number identifying the user.
+ * @param {string} rideType The ride type (e.g.: lyft, lyft_line, etc).
+ * @param {object} origin The ride starting location.
+ * @param {object} destination The ride destination.
+ * @return {Promise} A promise that will resolve with the estimate object.
+ */
+function estimateRide(phone, rideType, origin, destination) {
+  return getCredentials(phone).then((auth) => {
+    return lyftApi.estimateRide(
+      auth.access_token,
+      rideType,
+      origin,
+      destination
+    );
+  });
+}
+
 module.exports = {
   authorizeUrl() {
     return lyftApi.authorizeUrl();
   },
   handleAuthorizeRedirect,
   requestRide,
+  estimateRide,
   RIDE_TYPES: lyftApi.RIDE_TYPES,
 };

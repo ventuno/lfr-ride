@@ -12,6 +12,7 @@ const API_AUTHORIZE_URL = `${API_BASE_URL}/oauth/authorize\
 &state=abc`;
 const API_AUTH_PATH = 'oauth/token';
 const API_REQUEST_RIDE_PATH = 'v1/rides';
+const API_ESTIMATE_RIDE_PATH = 'v1/cost';
 const RIDE_TYPES = {
   LYFT: 'lyft',
   LYFT_PLUS: 'lyft_plus',
@@ -74,6 +75,25 @@ function requestRide(accessToken, rideType, origin, destination) {
 }
 
 /**
+ * Estimate a new ride.
+ * @param {string} accessToken The access token.
+ * @param {string} rideType The ride type (e.g.: lyft, lyft_line, etc).
+ * @param {object} origin The ride starting location.
+ * @param {object} destination The ride destination.
+ * @return {Promise} A promise that will resolve with the ride object.
+ */
+function estimateRide(accessToken, rideType, origin, destination) {
+  const query = {
+    ride_type: rideType,
+    start_lat: origin.lat,
+    start_lng: origin.lng,
+    end_lat: destination.lat,
+    end_lng: destination.lng,
+  };
+  return doAPIGET(accessToken, API_ESTIMATE_RIDE_PATH, query);
+}
+
+/**
  * Generic Auth POST request.
  * @param {string} path URL path.
  * @param {object} body Request body.
@@ -119,6 +139,29 @@ function doAPIPOST(accessToken, path, body) {
   });
 }
 
+/**
+ * Generic API GET request.
+ * @param {string} accessToken The access token.
+ * @param {string} path The URL path.
+ * @param {string} query The data associated with the request.
+ * @return {Promise} A promise that will resolve with the response body.
+ */
+function doAPIGET(accessToken, path, query) {
+  const options = {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    uri: `${API_BASE_URL}/${path}`,
+    qs: query,
+    json: true,
+  };
+  return rp(options).then((body) => {
+    console.log(body);
+    return body;
+  });
+}
+
 module.exports = {
   authorizeUrl() {
     return API_AUTHORIZE_URL;
@@ -126,5 +169,6 @@ module.exports = {
   handleAuthorizeRedirect,
   refreshAccessToken,
   requestRide,
+  estimateRide,
   RIDE_TYPES,
 };

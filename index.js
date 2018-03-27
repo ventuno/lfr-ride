@@ -73,6 +73,25 @@ app.post('/rides', (req, res) => {
   res.send('okp');
 });
 
+app.post('/estimate', (req, res) => {
+  const body = req.body;
+  const phone = body.phone;
+  lyftClient
+    .estimateRide(
+      phone,
+      lyftClient.RIDE_TYPES.LYFT_LINE,
+      body.origin,
+      body.destination
+    )
+    .then((estimate) => {
+      if (estimate) {
+        return smsApi.sendSms(phone, 'ride created');
+      }
+      throw new Error();
+    });
+  res.send('okp');
+});
+
 app.post('/update', (req, res) => {
   const body = req.body;
   const event = body.event;
