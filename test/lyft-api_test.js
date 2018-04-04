@@ -43,7 +43,7 @@ nock('https://api.lyft.com')
 
 describe('lyft-api', function() {
   it('should return the auth URL', function() {
-    expect(lyftApi.authorizeUrl()).to.equal(
+    expect(lyftApi.authorizeUrl('abc')).to.equal(
       'https://api.lyft.com/oauth/authorize?client_id=lyft_client_id&scope=public%20profile%20rides.read%20rides.request%20offline&response_type=code&state=abc'
     );
   });

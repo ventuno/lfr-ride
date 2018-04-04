@@ -4,6 +4,10 @@ module.exports = {
     dburi: process.env.MONGODB_URI,
     sess_secret: process.env.SESS_SECRET,
   },
+  crypto: {
+    algorithm: process.env.CRYPTO_ALGORITHM,
+    password: process.env.CRYPTO_PASSWORD,
+  },
   auth: {
     lyft: {
       client_id: process.env.LYFT_CLIENT_ID,
