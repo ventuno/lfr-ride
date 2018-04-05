@@ -14,6 +14,8 @@ const base64Auth = Buffer.from(
     'auth.lyft.client_secret'
   )}`
 ).toString('base64');
+
+const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
 const nock = require('nock');
@@ -24,21 +26,15 @@ const router = require('../server');
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
-nock('https://api.lyft.com')
-  .post('/oauth/token', {
-    grant_type: 'refresh_token',
-    refresh_token: 'refresh_token',
-  })
-  .reply(200, {access_token: 'abc'})
+const lyft = nock('https://api.lyft.com');
+lyft
   .post('/oauth/token', {grant_type: 'authorization_code', code: 'code'})
   .matchHeader('authorization', `Basic ${base64Auth}`)
-  .reply(200, {access_token: 'abc'})
-  .post('/oauth/token', {
-    grant_type: 'refresh_token',
+  .reply(200, {
+    access_token: 'abc',
     refresh_token: 'refresh_token',
+    expires_in: 3600,
   })
-  .matchHeader('authorization', `Basic ${base64Auth}`)
-  .reply(200, {access_token: 'abc'})
   .post('/v1/rides', {
     ride_type: 'lyft_line',
     origin: {lat: 123, lng: 123},
@@ -48,7 +44,7 @@ nock('https://api.lyft.com')
   .reply(204, {ride_id: 123})
   .get('/v1/cost')
   .query({
-    ride_type: 'ride_type',
+    ride_type: 'lyft_line',
     start_lat: 123,
     start_lng: 123,
     end_lat: 234,
@@ -56,8 +52,10 @@ nock('https://api.lyft.com')
   })
   .matchHeader('authorization', 'Bearer abc')
   .reply(200, {ride_id: 123});
+
 let req = request.agent(app);
 let state;
+
 describe('lfr-ride', function() {
   before(require('mongodb-runner/mocha/before'));
   before(() => {
@@ -128,5 +126,49 @@ describe('lfr-ride', function() {
       .set('Content-Type', 'application/json')
       .expect(200)
       .end();
+  });
+
+  it('it should estimate a ride', function() {
+    req
+      .post('/estimate')
+      .send({
+        phone: '+15555558383',
+        origin: {lat: 123, lng: 123},
+        destination: {lat: 234, lng: 234},
+      })
+      .set('Content-Type', 'application/json')
+      .expect(200)
+      .end();
+  });
+
+  it('it should refresh the token', function() {
+    lyft
+      .post('/oauth/token', {
+        grant_type: 'refresh_token',
+        refresh_token: 'refresh_token',
+      })
+      .matchHeader('authorization', `Basic ${base64Auth}`)
+      .reply(200, {access_token: 'def', expires_in: 3600})
+      .post('/v1/rides', {
+            ride_type: 'lyft_line',
+            origin: {lat: 456, lng: 456},
+            destination: {lat: 456, lng: 456},
+          })
+      .matchHeader('authorization', 'Bearer def')
+      .reply(204, {ride_id: 456});
+
+    const clock = sinon.useFakeTimers(new Date(9999, 0));
+    req
+      .post('/rides')
+      .send({
+        phone: '+15555558383',
+        origin: {lat: 456, lng: 456},
+        destination: {lat: 456, lng: 456},
+      })
+      .set('Content-Type', 'application/json')
+      .expect(200)
+      .end(() => {
+        clock.restore();
+      });
   });
 });
