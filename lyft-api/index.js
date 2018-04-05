@@ -1,15 +1,12 @@
+const url = require('url');
 const config = require('config');
 const rp = require('request-promise');
 
 const API_BASE_URL = 'https://api.lyft.com';
 const CLIENT_ID = config.get('auth.lyft.client_id');
 const CLIENT_SECRET = config.get('auth.lyft.client_secret');
-const API_SCOPE = 'public%20profile%20rides.read%20rides.request%20offline';
-const API_AUTHORIZE_URL = `${API_BASE_URL}/oauth/authorize\
-?client_id=${CLIENT_ID}\
-&scope=${API_SCOPE}\
-&response_type=code\
-&state=abc`;
+const API_SCOPE = 'public profile rides.read rides.request offline';
+const API_AUTHORIZE_PATH = 'oauth/authorize';
 const API_AUTH_PATH = 'oauth/token';
 const API_REQUEST_RIDE_PATH = 'v1/rides';
 const API_ESTIMATE_RIDE_PATH = 'v1/cost';
@@ -163,8 +160,19 @@ function doAPIGET(accessToken, path, query) {
 }
 
 module.exports = {
-  authorizeUrl() {
-    return API_AUTHORIZE_URL;
+  authorizeUrl(state) {
+    const baseUrl = url.parse(API_BASE_URL);
+    return url.format({
+      protocol: baseUrl.protocol,
+      hostname: baseUrl.hostname,
+      pathname: API_AUTHORIZE_PATH,
+      query: {
+        client_id: CLIENT_ID,
+        scope: API_SCOPE,
+        response_type: 'code',
+        state,
+      },
+    });
   },
   handleAuthorizeRedirect,
   refreshAccessToken,

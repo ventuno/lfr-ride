@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
-    "dbg": "nodemon --inspect index.js",
+    "dbg": "nodemon --inspect --debug-brk index.js",
     "format": "prettier-eslint --write \"./**/*.js\"",
     "eslint": "eslint .",
+    "pretest": "mongodb-runner start",
     "test": "mocha",
-    "watch-test": "mocha --watch --inspect-brk"
+    "posttest": "mongodb-runner stop",
+    "watch-test": "mocha --watch --inspect --debug-brk"
   },
   "author": "",
   "license": "ISC",
@@ -24,11 +26,15 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
+    "connect-mongo": "^2.0.1",
     "eslint": "^4.18.2",
     "eslint-config-google": "^0.9.1",
+    "eslint-plugin-mocha": "^5.0.0",
     "mocha": "^5.0.5",
+    "mongodb-runner": "^3.6.1",
     "nock": "^9.2.3",
     "nodemon": "^1.17.1",
-    "prettier-eslint-cli": "^4.7.1"
+    "prettier-eslint-cli": "^4.7.1",
+    "supertest": "^3.0.0"
   }
 }

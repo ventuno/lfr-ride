@@ -1,14 +1,24 @@
+const crypto = require('crypto');
+
+const config = require('config');
 const lyftApi = require('../lyft-api');
 const {LyftUser} = require('../model');
+
+const ALGORITHM = config.get('crypto.algorithm');
+const PASSWORD = config.get('crypto.password');
+const CRYPTO_INPUT_ENCODING = 'utf8';
+const CRYPTO_OUTPUT_ENCODING = 'base64';
 
 /**
  * Retrieve the access token and stores it.
  * @param {string} code Code returned by the API and sent to the redirect URL.
- * @param {string} phone Phone number associate to the user.
+ * @param {string} state The state object as received from the Lyft API.
  * @return {Promise} A promise that will resolve with the user object.
  */
-function handleAuthorizeRedirect(code, phone) {
+function handleAuthorizeRedirect(code, state) {
   let auth = null;
+  const stateObj = decrypt(state);
+  const phone = stateObj.phone;
   return lyftApi
     .handleAuthorizeRedirect(code)
     .then((authInfo) => {
@@ -114,9 +124,43 @@ function estimateRide(phone, rideType, origin, destination) {
   });
 }
 
+/**
+ * Encrypt an object using the configured algorithm and password.
+ * @param {object} obj The JSON object to stringify and encrypt.
+ * @return {string} The encrypted stringified input object.
+ */
+function encrypt(obj) {
+  const cipher = crypto.createCipher(ALGORITHM, PASSWORD);
+  let encrypted = cipher.update(
+    JSON.stringify(obj),
+    CRYPTO_INPUT_ENCODING,
+    CRYPTO_OUTPUT_ENCODING
+  );
+  encrypted += cipher.final(CRYPTO_OUTPUT_ENCODING);
+  return encrypted;
+}
+
+/**
+ * Dencrypt a string into the original JSON object.
+ * @param {string} str The encrypted string.
+ * @return {object} The decrypted object.
+ */
+function decrypt(str) {
+  const decipher = crypto.createDecipher(ALGORITHM, PASSWORD);
+  let decrypted = decipher.update(
+    str,
+    CRYPTO_OUTPUT_ENCODING,
+    CRYPTO_INPUT_ENCODING
+  );
+  decrypted += decipher.final(CRYPTO_INPUT_ENCODING);
+  return JSON.parse(decrypted);
+}
+
 module.exports = {
-  authorizeUrl() {
-    return lyftApi.authorizeUrl();
+  authorizeUrl(phone) {
+    const state = {phone};
+    const encryptedState = encrypt(state);
+    return lyftApi.authorizeUrl(encryptedState);
   },
   handleAuthorizeRedirect,
   requestRide,
