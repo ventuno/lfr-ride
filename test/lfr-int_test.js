@@ -30,8 +30,6 @@ const lyft = nock('https://api.lyft.com');
 
 let req = request.agent(app);
 let state;
-let clock;
-
 describe('lfr-ride', function() {
   before(require('mongodb-runner/mocha/before'));
   before(() => {
@@ -48,9 +46,9 @@ describe('lfr-ride', function() {
       app.use(router);
     });
   });
-  after(require('mongodb-runner/mocha/after'));
   after(() => {
-    clock.restore();
+    require('mongodb-runner/mocha/after')();
+    mongoose.connection.close();
   });
   describe('basic paths', function() {
     it('should redirect to /index.html', function() {
@@ -168,7 +166,7 @@ describe('lfr-ride', function() {
         .matchHeader('authorization', 'Bearer def')
         .reply(204, {ride_id: 456});
 
-       clock = sinon.useFakeTimers(new Date(9999, 0));
+       const clock = sinon.useFakeTimers(new Date(9999, 0));
        return req
         .post('/rides')
         .send({
@@ -177,7 +175,8 @@ describe('lfr-ride', function() {
           destination: {lat: 456, lng: 456},
         })
         .set('Content-Type', 'application/json')
-        .expect(200);
+        .expect(200)
+        .then(clock.restore);
     });
   });
 });
