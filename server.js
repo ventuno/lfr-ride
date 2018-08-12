@@ -50,7 +50,7 @@ router.post('/rides', (req, res) => {
 router.post('/estimate', (req, res) => {
   const body = req.body;
   const phone = body.phone;
-  lyftClient
+  return lyftClient
     .estimateRide(
       phone,
       lyftClient.RIDE_TYPES.LYFT_LINE,
@@ -59,7 +59,7 @@ router.post('/estimate', (req, res) => {
     )
     .then((estimate) => {
       if (estimate) {
-        res.json(estimate);
+        return res.json(estimate);
       }
       throw new Error();
     });
