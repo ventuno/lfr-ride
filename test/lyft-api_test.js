@@ -13,33 +13,7 @@ const base64Auth = Buffer.from(
   )}`
 ).toString('base64');
 
-nock('https://api.lyft.com')
-  .post('/oauth/token', {grant_type: 'authorization_code', code: 'code'})
-  .matchHeader('authorization', `Basic ${base64Auth}`)
-  .reply(200, {access_token: 'abc'})
-  .post('/oauth/token', {
-    grant_type: 'refresh_token',
-    refresh_token: 'refresh_token',
-  })
-  .matchHeader('authorization', `Basic ${base64Auth}`)
-  .reply(200, {access_token: 'abc'})
-  .post('/v1/rides', {
-    ride_type: 'ride_type',
-    origin: {lat: 123, lng: 123},
-    destination: {lat: 234, lng: 234},
-  })
-  .matchHeader('authorization', 'Bearer access_token')
-  .reply(204, {ride_id: 123})
-  .get('/v1/cost')
-  .query({
-    ride_type: 'ride_type',
-    start_lat: 123,
-    start_lng: 123,
-    end_lat: 234,
-    end_lng: 234,
-  })
-  .matchHeader('authorization', 'Bearer access_token')
-  .reply(200, {ride_id: 123});
+const lyft = nock('https://api.lyft.com');
 
 describe('lyft-api', function() {
   it('should return the auth URL', function() {
@@ -49,18 +23,37 @@ describe('lyft-api', function() {
   });
 
   it('should retrieve the access token', function() {
+    lyft
+      .post('/oauth/token', {grant_type: 'authorization_code', code: 'code'})
+      .matchHeader('authorization', `Basic ${base64Auth}`)
+      .reply(200, {access_token: 'abc'});
     return lyftApi.handleAuthorizeRedirect('code').then((auth) => {
       expect(auth).to.have.property('access_token');
     });
   });
 
   it('should refresh the access token', function() {
+    lyft
+      .post('/oauth/token', {
+        grant_type: 'refresh_token',
+        refresh_token: 'refresh_token',
+      })
+      .matchHeader('authorization', `Basic ${base64Auth}`)
+      .reply(200, {access_token: 'abc'});
     return lyftApi.refreshAccessToken('refresh_token').then((auth) => {
       expect(auth).to.have.property('access_token');
     });
   });
 
   it('should request a new ride', function() {
+    lyft
+      .post('/v1/rides', {
+        ride_type: 'ride_type',
+        origin: {lat: 123, lng: 123},
+        destination: {lat: 234, lng: 234},
+      })
+      .matchHeader('authorization', 'Bearer access_token')
+      .reply(204, {ride_id: 123});
     return lyftApi
       .requestRide(
         'access_token',
@@ -74,6 +67,17 @@ describe('lyft-api', function() {
   });
 
   it('should estimate a new ride', function() {
+    lyft
+      .get('/v1/cost')
+      .query({
+        ride_type: 'ride_type',
+        start_lat: 123,
+        start_lng: 123,
+        end_lat: 234,
+        end_lng: 234,
+      })
+      .matchHeader('authorization', 'Bearer access_token')
+      .reply(200, {ride_id: 123});
     return lyftApi
       .estimateRide(
         'access_token',
