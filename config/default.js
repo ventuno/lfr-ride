@@ -14,7 +14,4 @@ module.exports = {
       client_secret: `SANDBOX-${process.env.LYFT_CLIENT_SECRET}`,
     },
   },
-  services: {
-    'sms-service': process.env.SMS_SERVICE,
-  },
 };

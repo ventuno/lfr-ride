@@ -50,30 +50,16 @@ describe('lfr-ride', function() {
     require('mongodb-runner/mocha/after')();
     mongoose.connection.close();
   });
-  describe('basic paths', function() {
-    it('should redirect to /index.html', function() {
-      return req
-        .get('/step1')
-        .expect('Location', '/index.html')
-        .expect(302);
-    });
-  });
-
   describe('authentication', function() {
-    it('should redirect to /lyft_auth', function() {
+    it('should return the lyft website URL', function() {
       return req
-        .post('/step2')
-        .type('form')
-        .send({phone: '+15555558383'})
-        .expect('Location', '/lyft_auth')
-        .expect(302);
-    });
-    it('should redirect to the lyft website', function() {
-      return req
-        .get('/lyft_auth')
+        .post('/lyft_auth')
+        .send({
+          phone: '+15555558383',
+        })
+        .set('Content-Type', 'application/json')
         .expect((res) => {
-          const locationHeader = res.headers.location;
-          const redirectUrl = url.parse(locationHeader, true);
+          const redirectUrl = url.parse(res.body.url, true);
           expect(redirectUrl.protocol).to.equal('https:');
           expect(redirectUrl.hostname).to.equal('api.lyft.com');
           expect(redirectUrl.pathname).to.equal('/oauth/authorize');
@@ -86,7 +72,7 @@ describe('lfr-ride', function() {
           expect(redirectUrl.query).to.have.property('state');
           state = redirectUrl.query.state;
         })
-        .expect(302);
+        .expect(200);
     });
     it('it should request the authorization token', function() {
       lyft
@@ -98,8 +84,12 @@ describe('lfr-ride', function() {
           expires_in: 3600,
         });
       return req
-        .get('/step3')
-        .query({code: 'code', state: state})
+        .post('/step3')
+        .send({code: 'code', state: state})
+        .set('Content-Type', 'application/json')
+        .expect((res) => {
+          expect(res.body.status).to.equal('success');
+        })
         .expect(200);
     });
   });
