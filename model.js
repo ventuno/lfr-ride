@@ -13,16 +13,6 @@ const lyftUserSchema = mongoose.Schema({
 
 const LyftUser = mongoose.model('LyftUser', lyftUserSchema);
 
-const lyftRideSchema = mongoose.Schema({
-  phone: String,
-  ride_id: String,
-  status: String,
-  can_cancel: [String],
-});
-
-const LyftRide = mongoose.model('LyftRide', lyftRideSchema);
-
 module.exports = {
   LyftUser,
-  LyftRide,
 };

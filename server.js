@@ -1,24 +1,14 @@
 const express = require('express');
-const {LyftRide} = require('./model');
 const lyftClient = require('./lyft-client');
 
 /* eslint-disable new-cap */
 const router = express.Router();
 
-router.get('/step1', (req, res) => {
-  res.redirect('/index.html');
-});
-
-router.post('/step2', (req, res) => {
-  req.session.phone = req.body.phone;
-  res.redirect('/lyft_auth');
-});
-
-router.get('/step3', (req, res) => {
+router.post('/step3', (req, res) => {
   return lyftClient
-    .handleAuthorizeRedirect(req.query.code, req.query.state)
+    .handleAuthorizeRedirect(req.body.code, req.body.state)
     .then(() => {
-      res.send('Hello World!');
+      res.json({status: 'success'});
     });
 });
 
@@ -32,16 +22,6 @@ router.post('/rides', (req, res) => {
       body.origin,
       body.destination
     )
-    .then((ride) => {
-      if (ride) {
-        return LyftRide.create({
-          phone: phone,
-          ride_id: ride.ride_id,
-          status: ride.status,
-        });
-      }
-      throw new Error();
-    })
     .then((ride) => {
       res.json(ride);
     });
@@ -66,20 +46,14 @@ router.post('/estimate', (req, res) => {
 });
 
 router.post('/update', (req, res) => {
-  const body = req.body;
-  const event = body.event;
-  LyftRide.findOne({ride_id: event.ride_id}, (err, ride) => {
-    if (ride) {
-      ride.status = event.status;
-      ride.can_cancel = event.can_cancel;
-      ride.save();
-    }
-  });
+  // TODO forward events
   res.send('okp');
 });
 
-router.get('/lyft_auth', (req, res) =>
-  res.redirect(lyftClient.authorizeUrl(req.session.phone))
+router.post('/lyft_auth', (req, res) =>
+  res.json({
+    url: lyftClient.authorizeUrl(req.body.phone),
+  })
 );
 
 module.exports = router;
